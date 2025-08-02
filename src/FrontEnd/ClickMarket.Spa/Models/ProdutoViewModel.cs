@@ -1,6 +1,9 @@
-﻿namespace ClickMarket.Spa.Models;
+﻿using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
-public class ProdutoListViewModel
+namespace ClickMarket.Spa.Models;
+
+public class ProdutoViewModel
 {
     public Guid Id { get; set; }
     public string Nome { get; set; }
@@ -8,5 +11,6 @@ public class ProdutoListViewModel
     public decimal Valor { get; set; }
     public string Imagem { get; set; }
     public Guid CategoriaId { get; set; }
-    public bool AddListaDesejos { get; set; }
+    public bool NaListaDesejos { get; set; }
+    public int? QuantidadeEstoque { get; set; }
 }

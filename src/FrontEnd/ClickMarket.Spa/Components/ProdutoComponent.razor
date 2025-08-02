@@ -1,0 +1,82 @@
+﻿@rendermode InteractiveServer
+@inject IJSRuntime JS
+
+@inject ProdutoService ProdutoService
+
+<div class="col">
+    <div class="card h-100">
+        <img class="card-img-top" src="@ObterImagemUrl(produto.Imagem)" alt="@produto.Nome" style="height:200px; object-fit:contain;" />
+        <div class="card-body">
+            <h5 class="card-title">@produto.Nome</h5>
+            <p class="card-text text-truncate">@produto.Descricao</p>
+        </div>
+        <div class="card-footer">
+            <div class="card-footer">
+                <div class="row">
+                    <div class="col-md-4">
+                        <span class="fw-bold">R$ @produto.Valor.ToString("N2")</span>
+                    </div>
+                    <div class="col-md-6 offset-md-2">
+                        <AuthorizeView>
+                            <Authorized>
+                                @if (!produto.NaListaDesejos)
+                                {
+                                    <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventSalvar">
+                                    <label class="btn btn-outline-primary float-end" for="@produto.Nome">Adicionar à lista</label>
+                                }
+                                else
+                                {
+                                    <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventRemover">
+                                    <label class="btn btn-outline-secondary float-end" for="@produto.Nome">Remover da lista</label>
+                                }
+                            </Authorized>
+                        </AuthorizeView>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [Parameter]
+    public ProdutoViewModel produto { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> SalvarNaListaCallBack { get; set; }
+
+    private async Task TriggerEventSalvar()
+    {
+        var retornoViewModel = await ProdutoService.SalvarNaLista(produto.Id);
+
+        if (!retornoViewModel.Success)
+        {
+            await JS.InvokeAsync<string>("alert", string.Join("\n", retornoViewModel.Errors));
+            return;
+        }
+
+        await SalvarNaListaCallBack.InvokeAsync(produto.Id);
+    }
+
+    [Parameter]
+    public EventCallback<Guid> RemoverDaListaCallBack { get; set; }
+
+    private async Task TriggerEventRemover()
+    {
+        var retornoViewModel = await ProdutoService.RemoverDaLista(produto.Id);
+        if (!retornoViewModel.Success)
+        {
+            await JS.InvokeAsync<string>("alert", string.Join("\n", retornoViewModel.Errors));
+            return;
+        }
+
+        await RemoverDaListaCallBack.InvokeAsync(produto.Id);
+    }
+
+    private string ObterImagemUrl(string imagem)
+    {
+        return ProdutoService.ObterImagem(imagem);
+    }
+
+}

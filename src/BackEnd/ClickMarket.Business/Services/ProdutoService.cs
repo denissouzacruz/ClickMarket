@@ -26,18 +26,6 @@ public class ProdutoService(
         await produtoRepository.Remover(id);
     }
 
-    public async Task<ProdutoDto> ObterFavorito(Guid produtoId, Guid clienteId)
-    {
-        var model = await produtoRepository.ObterProdutoFavorito(produtoId, clienteId);
-        if (model == null)
-        {
-            Notificar("Produto favorito não encontrado.");
-            return null;
-        }
-
-        return mapper.Map<Produto, ProdutoDto>(model);
-    }
-
     public async Task<Favorito> AdicionarFavorito(Guid produtoId, Guid clienteId)
     {
         var favorito = new Favorito
@@ -85,5 +73,29 @@ public class ProdutoService(
     {
         produtoRepository?.Dispose();
         GC.SuppressFinalize(this);
+    }
+
+    public async Task Ativar(Guid id)
+    {
+        var produto = await produtoRepository.ObterPorId(id);
+        if (produto == null)
+        {
+            Notificar("Produto não encontrado.");
+            return;
+        }
+        produto.Ativo = true;
+        await produtoRepository.Atualizar(produto);
+    }
+
+    public async Task Inativar(Guid id)
+    {
+        var produto = await produtoRepository.ObterPorId(id);
+        if (produto == null)
+        {
+            Notificar("Produto não encontrado.");
+            return;
+        }
+        produto.Ativo = false;
+        await produtoRepository.Atualizar(produto);
     }
 }

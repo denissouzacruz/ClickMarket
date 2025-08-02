@@ -1,6 +1,4 @@
-﻿using AutoMapper;
-using ClickMarket.Business.Dtos;
-using ClickMarket.Business.Interfaces;
+﻿using ClickMarket.Business.Interfaces;
 using ClickMarket.Business.Models;
 using ClickMarket.Data.Context;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +35,7 @@ namespace ClickMarket.Data.Repository
                         .Where(x => x.VendedorId == vendedorId).ToListAsync();
         }
 
-        public async Task<IEnumerable<Produto>> ObterProdutoPorCategoria(Guid categoriaId)
+        public async Task<IEnumerable<Produto>> ObterProdutosPorCategoriaId(Guid categoriaId)
         {
             return await _dbSet
                         .AsNoTracking()
@@ -48,7 +46,7 @@ namespace ClickMarket.Data.Repository
 
         public async Task<List<Produto>> ObterTodosIncluindoFavoritos(Guid? clienteId = null)
         {
-            var produtos = new List<Produto>(); 
+            var produtos = new List<Produto>();
             if (clienteId.HasValue)
             {
                 var produtosFavoritados = await _dbSet

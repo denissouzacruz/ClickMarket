@@ -3,9 +3,12 @@ using ClickMarket.Business.Models;
 
 namespace ClickMarket.Business.Services
 {
-    public class CategoriaService(ICategoriaRepository categoriaRepository) : ICategoriaService
+    public class CategoriaService(INotificador notificador,
+        ICategoriaRepository categoriaRepository,
+        IProdutoRepository produtoRepository) : BaseService(notificador), ICategoriaService
     {
         private readonly ICategoriaRepository _categoriaRepository = categoriaRepository;
+        private readonly IProdutoRepository _produtoRepository = produtoRepository;
 
         public async Task Adicionar(Categoria categoria)
         {
@@ -21,7 +24,13 @@ namespace ClickMarket.Business.Services
 
         public async Task Remover(Guid id)
         {
-            //Não é possível remover categoria com produto associado
+            var produtos = await _produtoRepository.ObterProdutosPorCategoriaId(id);
+
+            if(produtos.Any())
+            {
+                Notificar("Não é possível remover essa categoria, pois te produtos adicionados.");
+                return;
+            }
 
             await _categoriaRepository.Remover(id);
         }

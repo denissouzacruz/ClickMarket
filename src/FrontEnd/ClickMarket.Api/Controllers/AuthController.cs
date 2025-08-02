@@ -1,4 +1,5 @@
-﻿using ClickMarket.Api.Models;
+﻿using ClickMarket.Api.Extensions;
+using ClickMarket.Api.ViewModels;
 using ClickMarket.Business.Interfaces;
 using ClickMarket.Business.Requests;
 using Microsoft.AspNetCore.Identity;
@@ -102,7 +103,7 @@ public class AuthController(SignInManager<IdentityUser> signInManager,
     private string GerarJwt(string email)
     {
         var user = _userManager.FindByEmailAsync(email).Result;
-        
+
         var claims = CarregarClaimsUsuario(user).Result;
 
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -128,7 +129,7 @@ public class AuthController(SignInManager<IdentityUser> signInManager,
         var claims = await _userManager.GetClaimsAsync(user);
         var userRoles = await _userManager.GetRolesAsync(user);
 
-        claims.Add(new Claim(ClaimTypes.Sid, user.Id));
+        claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id));
         claims.Add(new Claim(ClaimTypes.Email, user.Email));
         claims.Add(new Claim(ClaimTypes.Role, userRoles.FirstOrDefault() ?? string.Empty));
 

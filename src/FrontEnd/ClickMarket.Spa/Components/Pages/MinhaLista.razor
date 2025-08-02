@@ -21,39 +21,16 @@ else
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var p in produtos)
         {
-            <div class="col">
-                <div class="card h-100">
-                    <img class="card-img-top" src="@ObterImagemUrl(p.Imagem)" alt="@p.Nome" style="height:200px; object-fit:contain;" />
-                    <div class="card-body">
-                        <h5 class="card-title">@p.Nome</h5>
-                        <p class="card-text text-truncate">@p.Descricao</p>
-                    </div>
-                    <div class="card-footer">
-                        <div class="card-footer">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <span class="fw-bold">R$ @p.Valor.ToString("N2")</span>
-                                </div>
-                                <div class="col-md-6 offset-md-2">
-                                    <AuthorizeView>
-                                        <Authorized>
-                                            <input type="checkbox" class="btn-check right" id="@p.Nome" autocomplete="off" @onchange="() => RemoverDaLista(p.Id)">
-                                            <label class="btn btn-outline-secondary" for="@p.Nome">Remover da lista</label>
-                                        </Authorized>
-                                    </AuthorizeView>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ProdutoComponent produto="p" 
+                RemoverDaListaCallBack="async (value) => { await RemoverDaLista(value); }">
+            </ProdutoComponent>
         }
     </div>
 }
 
 @code {
 
-    private List<ProdutoListViewModel> produtos;
+    private List<ProdutoViewModel> produtos;
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,24 +41,12 @@ else
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Erro ao carregar produtos: {ex.Message}");
-            produtos = new List<ProdutoListViewModel>();
+            produtos = new List<ProdutoViewModel>();
         }
     }
 
     private async Task RemoverDaLista(Guid produtoId)
     {
-        var retornoViewModel = await ProdutoService.RemoverDaLista(produtoId);
-        if (!retornoViewModel.Success)
-        {
-            await JS.InvokeAsync<string>("alert", string.Join("\n", retornoViewModel.Errors));
-            return;
-        }
-
         produtos = await ProdutoService.ObterProdutosFavoritos();
-    }
-
-    private string ObterImagemUrl(string imagem)
-    {
-        return ProdutoService.ObterImagem(imagem);
     }
 }

@@ -1,12 +1,11 @@
 ﻿using ClickMarket.Business.Dtos;
 using ClickMarket.Business.Interfaces;
-using ClickMarket.Business.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ClickMarket.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador")]
     [ApiController]
     [Route("api/clientes")]
     public class ClientesController(IClienteService clienteService, INotificador notificador, IUser user) : MainController(notificador, user)
@@ -14,7 +13,7 @@ namespace ClickMarket.Api.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<ClienteDto>))]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<IEnumerable<Models.CategoriaListViewModel>>> ObterTodos()
+        public async Task<ActionResult<IEnumerable<ClienteDto>>> ObterTodos()
         {
             var clientes = await clienteService.ObterTodos();
 

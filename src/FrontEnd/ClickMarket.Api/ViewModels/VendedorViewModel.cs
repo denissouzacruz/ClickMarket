@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace ClickMarket.Api.Models
+namespace ClickMarket.Api.ViewModels
 {
     public class VendedorViewModel
     {

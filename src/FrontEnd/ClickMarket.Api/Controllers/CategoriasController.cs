@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using ClickMarket.Api.Models;
+using ClickMarket.Api.ViewModels;
 using ClickMarket.Business.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,30 +7,24 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ClickMarket.Api.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Administrador")]
     [ApiController]
     [Route("api/categorias")]
-    public class CategoriasController : ControllerBase
+    public class CategoriasController(ICategoriaRepository categoriaRepository,
+                                ICategoriaService categoriaService,
+                                IMapper mapper,
+                                IUser user,
+                                INotificador notificador) : MainController(notificador, user)
     {
-        private readonly IProdutoRepository _produtoRepository;
-        private readonly ICategoriaRepository _categoriaRepository;
-        private readonly IMapper _mapper;
-
-        public CategoriasController(IProdutoRepository produtoRepository,
-                                    ICategoriaRepository categoriaRepository,
-                                    IMapper mapper)
-        {
-            _produtoRepository = produtoRepository;
-            _categoriaRepository = categoriaRepository;
-            _mapper = mapper;
-        }
+        private readonly ICategoriaRepository _categoriaRepository = categoriaRepository;
+        private readonly IMapper _mapper = mapper;
 
         [AllowAnonymous]
         [HttpGet("{id:Guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<Models.CategoriaListViewModel>> GetCategoria(Guid id)
+        public async Task<ActionResult<CategoriaViewModel>> ObterPorId(Guid id)
         {
             var categoria = await _categoriaRepository.ObterPorId(id);
 
@@ -39,16 +33,16 @@ namespace ClickMarket.Api.Controllers
                 return NotFound();
             }
 
-            var categoriaModel = _mapper.Map<Models.CategoriaListViewModel>(categoria);
+            var categoriaModel = _mapper.Map<CategoriaViewModel>(categoria);
             return categoriaModel;
         }
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Models.CategoriaListViewModel>>> GetCategorias()
+        public async Task<ActionResult<IEnumerable<CategoriaViewModel>>> ObterTodas()
         {
             var categorias = await _categoriaRepository.ObterTodos();
-            var categoriasModel = _mapper.Map<IEnumerable<Models.CategoriaListViewModel>>(categorias);
+            var categoriasModel = _mapper.Map<IEnumerable<CategoriaViewModel>>(categorias);
 
             return categoriasModel.ToList();
         }
@@ -57,7 +51,7 @@ namespace ClickMarket.Api.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<Models.CategoriaViewModel>> PostCategoria(Models.CategoriaViewModel categoria)
+        public async Task<ActionResult<CategoriaViewModel>> Criar(CategoriaViewModel categoria)
         {
             if (!ModelState.IsValid)
             {
@@ -70,7 +64,7 @@ namespace ClickMarket.Api.Controllers
             var categoriaModel = _mapper.Map<Business.Models.Categoria>(categoria);
             await _categoriaRepository.Adicionar(categoriaModel);
 
-            return CreatedAtAction(nameof(GetCategoria), new { Id = categoriaModel.Id }, categoria);
+            return CreatedAtAction(nameof(ObterPorId), new { categoriaModel.Id }, categoria);
         }
 
         [HttpPut("{id:Guid}")]
@@ -78,7 +72,7 @@ namespace ClickMarket.Api.Controllers
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<IActionResult> PutCategoria(Guid id, Models.CategoriaViewModel categoria)
+        public async Task<IActionResult> Alterar(Guid id, CategoriaViewModel categoria)
         {
             if (!ModelState.IsValid)
             {
@@ -115,23 +109,18 @@ namespace ClickMarket.Api.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<IActionResult> DeleteCategoria(Guid id)
+        public async Task<IActionResult> Remover(Guid id)
         {
             var categoriaBd = await _categoriaRepository.ObterCategoriaProduto(id);
             if (categoriaBd == null)
                 return NotFound();
 
-            if (categoriaBd.Produtos.Any())
-                return Problem("Não é possível excluir uma categoria com produtos associados");
+            await categoriaService.Remover(id);
 
-            await _categoriaRepository.Remover(id);
+            if (!OperacaoValida())
+                return CustomResponse();
+
             return NoContent();
-        }
-
-        private ActionResult<ProdutoViewModel> ReturnValidationProblem()
-        {
-            return ValidationProblem(new ValidationProblemDetails(ModelState)
-            { Title = "Ocorreu um ou mais erros ao enviar informações da categoria" });
         }
     }
 

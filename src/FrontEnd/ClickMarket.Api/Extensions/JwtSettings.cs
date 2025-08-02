@@ -1,4 +1,4 @@
-﻿namespace ClickMarket.Api.Models
+﻿namespace ClickMarket.Api.Extensions
 {
     public class JwtSettings
     {

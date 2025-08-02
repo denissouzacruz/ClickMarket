@@ -1,14 +1,10 @@
 ﻿using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
-namespace ClickMarket.Api.Models
+namespace ClickMarket.Api.ViewModels
 {
-    public class ProdutoListViewModel
+    public class ProdutoViewModel
     {
-        public ProdutoListViewModel()
-        {
-            Id = Guid.NewGuid();
-        }
         [Key]
         public Guid Id { get; set; }
 
@@ -21,27 +17,26 @@ namespace ClickMarket.Api.Models
         [DisplayName("Descrição")]
         public string Descricao { get; set; }
 
-
+        [Required(ErrorMessage = "O campo {0} é obrigatório")]
+        [DisplayName("Categoria")]
+        public Guid CategoriaId { get; set; }
 
         [Required(ErrorMessage = "Preencha o campo {0}.")]
-        [Range(0.01, Int32.MaxValue, ErrorMessage = "O valor precisa ser maior que 0")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "O valor precisa ser maior que 0")]
         [DisplayName("Preço")]
         public decimal Valor { get; set; }
 
         [Required(ErrorMessage = "Preencha o campo {0}.")]
+        [Range(1, int.MaxValue, ErrorMessage = "O valor precisa ser maior que 0")]
         [DisplayName("Qtd em Estoque")]
         public int? QuantidadeEstoque { get; set; }
 
+        [Required(ErrorMessage = "Preencha o campo {0}.")]
+        public IFormFile ImagemUpload { get; set; }
         public string Imagem { get; set; }
-
-        public bool AddListaDesejos { get; set; }
-
-        [Required(ErrorMessage = "O campo {0} é obrigatório")]
-        [DisplayName("Categoria")]
-        public Guid CategoriaId { get; set; }
-        public CategoriaListViewModel Categoria { get; set; }
-
-        public Guid? VendedorId { get; set; }
+        public bool NaListaDesejos { get; set; }
+        public CategoriaViewModel Categoria { get; set; }
         public VendedorViewModel Vendedor { get; set; }
+
     }
 }

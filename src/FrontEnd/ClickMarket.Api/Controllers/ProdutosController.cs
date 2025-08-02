@@ -1,13 +1,12 @@
 ﻿using AutoMapper;
-using ClickMarket.Api.Models;
+using ClickMarket.Api.Extensions;
+using ClickMarket.Api.ViewModels;
 using ClickMarket.Business.Dtos;
 using ClickMarket.Business.Interfaces;
 using ClickMarket.Business.Models;
-using ClickMarket.Data.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using System.Security.Claims;
 
 namespace ClickMarket.Api.Controllers
@@ -15,35 +14,26 @@ namespace ClickMarket.Api.Controllers
     [Authorize]
     [ApiController]
     [Route("api/produtos")]
-    public class ProdutosController : MainController
+    public class ProdutosController(IProdutoRepository produtoRepository,
+                                ICategoriaRepository categoriaRepository,
+                                IMapper mapper,
+                                IConfiguration configuration,
+                                INotificador notificador,
+                                IUser user,
+                                IProdutoService produtoService) : MainController(notificador, user)
     {
-        private readonly IProdutoService _produtoService;
-        private readonly IProdutoRepository _produtoRepository;
-        private readonly ICategoriaRepository _categoriaRepository;
-        private readonly IMapper _mapper;
-        private readonly IConfiguration _configuration;
-
-        public ProdutosController(IProdutoRepository produtoRepository,
-                                    ICategoriaRepository categoriaRepository,
-                                    IMapper mapper,
-                                    IConfiguration configuration,
-                                    INotificador notificador,
-                                    IUser user,
-                                    IProdutoService produtoService) : base(notificador, user)
-        {
-            _produtoRepository = produtoRepository;
-            _categoriaRepository = categoriaRepository;
-            _mapper = mapper;
-            _configuration = configuration;
-            _produtoService = produtoService;
-        }
+        private readonly IProdutoService _produtoService = produtoService;
+        private readonly IProdutoRepository _produtoRepository = produtoRepository;
+        private readonly ICategoriaRepository _categoriaRepository = categoriaRepository;
+        private readonly IMapper _mapper = mapper;
+        private readonly IConfiguration _configuration = configuration;
 
         [AllowAnonymous]
         [HttpGet("{id:Guid}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<ProdutoListViewModel>> GetProduto(Guid id)
+        public async Task<ActionResult<ProdutoViewModel>> ObterPorId(Guid id)
         {
             var produto = await _produtoRepository.ObterProdutoCategoria(id);
 
@@ -51,36 +41,37 @@ namespace ClickMarket.Api.Controllers
             {
                 return NotFound();
             }
-            var produtoModel = _mapper.Map<Models.ProdutoListViewModel>(produto);
+            var produtoModel = _mapper.Map<ProdutoViewModel>(produto);
             return produtoModel;
         }
 
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<List<ProdutoListViewModel>>> GetProdutos()
+        public async Task<ActionResult<List<ProdutoViewModel>>> ObterTodos()
         {
             var produtoCategoria = await _produtoRepository.ObterTodosIncluindoFavoritos(UsuarioId != Guid.Empty ? UsuarioId : null);
-            var produtoModel = _mapper.Map<IEnumerable<ProdutoListViewModel>>(produtoCategoria);
+            var produtoModel = _mapper.Map<IEnumerable<ProdutoViewModel>>(produtoCategoria);
 
             return produtoModel.ToList();
         }
 
         [AllowAnonymous]
-        [HttpGet("categoria/{idCategoria}")]
-        public async Task<ActionResult<IEnumerable<Models.ProdutoListViewModel>>> GetProdutosCategoria(Guid idCategoria)
+        [HttpGet("categoria/{categoriaId}")]
+        public async Task<ActionResult<IEnumerable<ProdutoViewModel>>> ObterProdutosPorCategoriaId(Guid categoriaId)
         {
-            var produtoCategoria = await _produtoRepository.ObterProdutoPorCategoria(idCategoria);
-            var produtoModel = _mapper.Map<IEnumerable<Models.ProdutoListViewModel>>(produtoCategoria);
+            var produtoCategoria = await _produtoRepository.ObterProdutosPorCategoriaId(categoriaId);
+            var produtoModel = _mapper.Map<IEnumerable<ProdutoViewModel>>(produtoCategoria);
 
             return produtoModel.ToList();
         }
 
+        [Authorize(Roles = "Vendedor")]
         [HttpPost]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<Models.ProdutoViewModel>> PostProduto([FromForm] Models.ProdutoViewModel produto)
+        public async Task<ActionResult<ProdutoViewModel>> Criar([FromForm] ProdutoViewModel produto)
         {
             if (!ModelState.IsValid)
                 return ReturnValidationProblem();
@@ -93,25 +84,24 @@ namespace ClickMarket.Api.Controllers
             }
 
             var nomeImagem = ObterNomeImagemUpload(produto);
-            if (!await SalvarImagem(produto.Imagem, nomeImagem))
+            if (!await SalvarImagem(produto.ImagemUpload, nomeImagem))
                 return ReturnValidationProblem();
 
             var produtoModel = _mapper.Map<Business.Models.Produto>(produto);
-            produtoModel.VendedorId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            produtoModel.VendedorId = AppUser.GetUserId();
             produtoModel.Imagem = nomeImagem;
             await _produtoRepository.Adicionar(produtoModel);
 
-            return CreatedAtAction(nameof(GetProduto), new { Id = produtoModel.Id }, produto);
+            return CreatedAtAction(nameof(ObterPorId), new { produtoModel.Id }, produto);
         }
 
+        [Authorize(Roles = "Vendedor")]
         [HttpPut("{id:Guid}")]
         [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesDefaultResponseType]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<Models.ProdutoViewModel>> PutProduto(Guid id, [FromForm] Models.ProdutoViewModel produto)
+        public async Task<ActionResult<ProdutoViewModel>> Alterar(Guid id, [FromForm] ProdutoViewModel produto)
         {
             if (!ModelState.IsValid)
                 return ReturnValidationProblem();
@@ -127,7 +117,7 @@ namespace ClickMarket.Api.Controllers
                 return ReturnValidationProblem();
             }
 
-            var usuarioLogado = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var usuarioLogado = AppUser.GetUserId();
             if (produtoBd.VendedorId != usuarioLogado)
             {
                 ModelState.AddModelError("VendedorId", "Não é possível realizar alterações em produto que não pertence ao usuário logado!");
@@ -135,7 +125,7 @@ namespace ClickMarket.Api.Controllers
             }
 
             var nomeImagem = ObterNomeImagemUpload(produto);
-            if (!await SalvarImagem(produto.Imagem, nomeImagem))
+            if (!await SalvarImagem(produto.ImagemUpload, nomeImagem))
                 return ReturnValidationProblem();
 
             ExcluirImagem(produtoBd.Imagem);
@@ -159,18 +149,59 @@ namespace ClickMarket.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Administrador,Vendedor")]
+        [HttpPatch("{id:Guid}/inativar")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ProdutoViewModel>> InativarProduto(Guid id)
+        {
+            var produto = await _produtoRepository.ObterPorId(id);
+            if (produto == null)
+                return NotFound();
+
+            await _produtoService.Inativar(id);
+
+            if(!OperacaoValida())
+                return CustomResponse();
+
+            return NoContent();
+        }
+
+        [Authorize(Roles = "Administrador,Vendedor")]
+        [HttpPatch("{id:Guid}/ativar")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<ProdutoViewModel>> AtivarProduto(Guid id)
+        {
+            var produto = await _produtoRepository.ObterPorId(id);
+            if (produto == null)
+                return NotFound();
+
+            await _produtoService.Inativar(id);
+
+            if (!OperacaoValida())
+                return CustomResponse();
+
+            return NoContent();
+        }
+
+
         [HttpDelete("{id:Guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<IActionResult> DeleteProduto(Guid id)
+        public async Task<IActionResult> Remover(Guid id)
         {
             var produtoBd = await _produtoRepository.ObterPorId(id);
             if (_produtoRepository.ObterPorId(id) == null)
             {
                 return NotFound();
             }
-            var usuarioLogado = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var usuarioLogado = AppUser.GetUserId();
             if (produtoBd.VendedorId != usuarioLogado)
                 return Problem("Não é possível realizar alterações em produto que não pertence ao usuário logado!");
 
@@ -178,17 +209,19 @@ namespace ClickMarket.Api.Controllers
             return NoContent();
         }
 
+        [Authorize(Roles = "Cliente")]
         [HttpGet]
         [Route("favoritos")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<FavoritoDto>))]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<List<ProdutoListViewModel>>> ObterFavoritos()
+        public async Task<ActionResult<List<ProdutoViewModel>>> ObterFavoritos()
         {
             var produtos = await _produtoRepository.ObterTodosApenasFavoritos(UsuarioId);
-            var produtoModel = _mapper.Map<IEnumerable<ProdutoListViewModel>>(produtos);
+            var produtoModel = _mapper.Map<IEnumerable<ProdutoViewModel>>(produtos);
             return produtoModel.ToList();
         }
 
+        [Authorize(Roles = "Cliente")]
         [HttpPost("favoritos/{produtoId}")]
         [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(FavoritoDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -208,13 +241,14 @@ namespace ClickMarket.Api.Controllers
             return CustomResponse(favorito);
         }
 
+        [Authorize(Roles = "Cliente")]
         [HttpDelete("favoritos/{produtoId:Guid}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         public async Task<IActionResult> RemoverFavorito(Guid produtoId)
         {
-            var favorito = await _produtoService.ObterFavorito(produtoId, UsuarioId);
+            var favorito = await produtoRepository.ObterProdutoFavorito(produtoId, UsuarioId);
             if (favorito == null)
             {
                 return NotFound();
@@ -230,9 +264,9 @@ namespace ClickMarket.Api.Controllers
             { Title = "Ocorreu um ou mais erros ao enviar informações do produto" });
         }
 
-        private string ObterNomeImagemUpload(ProdutoViewModel produtoViewModel)
+        private static string ObterNomeImagemUpload(ProdutoViewModel produtoViewModel)
         {
-            var fileName = Path.GetFileName(produtoViewModel.Imagem.FileName);
+            var fileName = Path.GetFileName(produtoViewModel.ImagemUpload.FileName);
             return $"{Guid.NewGuid()}-{fileName}";
         }
 
@@ -243,18 +277,18 @@ namespace ClickMarket.Api.Controllers
             {
                 try
                 {
-                    string caminhoBase = _configuration["Parametros:DiretorioBaseImagemProduto"];
-                    var caminhoUpload = Path.Combine(caminhoBase, "wwwroot", "images", "upload");
+                    //string caminhoBase = _configuration["Parametros:DiretorioBaseImagemProduto"];
+                    string caminhoBase = Directory.GetCurrentDirectory().Replace("Api", "Spa");
+                    var caminhoUpload = Path.Combine(caminhoBase, "wwwroot", "imagens");
 
                     if (!Directory.Exists(caminhoUpload))
                         Directory.CreateDirectory(caminhoUpload);
 
                     var diretorio = Path.Combine(caminhoUpload, nomeImagem);
 
-                    using (var stream = new FileStream(diretorio, FileMode.Create))
-                    {
-                        await arquivo.CopyToAsync(stream);
-                    }
+                    using var stream = new FileStream(diretorio, FileMode.Create);
+
+                    await arquivo.CopyToAsync(stream);
                 }
                 catch (Exception ex)
                 {

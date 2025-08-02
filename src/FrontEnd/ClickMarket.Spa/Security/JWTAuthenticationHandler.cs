@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.Options;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -15,24 +14,24 @@ public class JWTAuthenticationHandler : AuthenticationHandler<CustomOptions>
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-		try
-		{
-			var token = Request.Cookies["access_token"];
-			if (string.IsNullOrWhiteSpace(token))
-				return AuthenticateResult.NoResult();
+        try
+        {
+            var token = Request.Cookies["access_token"];
+            if (string.IsNullOrWhiteSpace(token))
+                return AuthenticateResult.NoResult();
 
 
             var lerJwt = new JwtSecurityTokenHandler().ReadJwtToken(token);
             var identiy = new ClaimsIdentity(lerJwt.Claims, "jwt");
             var principal = new ClaimsPrincipal(identiy);
-			var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
 
-			return AuthenticateResult.Success(ticket);
+            return AuthenticateResult.Success(ticket);
         }
-		catch (Exception ex)
-		{
+        catch (Exception ex)
+        {
             return AuthenticateResult.NoResult();
-		}
+        }
     }
 
     protected override Task HandleChallengeAsync(AuthenticationProperties properties)

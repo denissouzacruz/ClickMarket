@@ -9,8 +9,10 @@ public interface IProdutoService : IDisposable
     public Task Remover(Guid id);
     public Task Atualizar(Produto produto);
 
+    public Task Ativar(Guid id);
+    public Task Inativar(Guid id);
 
-    Task<ProdutoDto> ObterFavorito(Guid produtoId, Guid clienteId);
+
     Task<Favorito> AdicionarFavorito(Guid produtoId, Guid clienteId);
     Task RemoverFavorito(Guid produtoId, Guid clienteId);
 }

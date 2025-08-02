@@ -1,4 +1,4 @@
-﻿using ClickMarket.Api.Models;
+﻿using ClickMarket.Api.Extensions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;

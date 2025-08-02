@@ -1,5 +1,4 @@
 ﻿using ClickMarket.Spa.Models;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Text.Json;
 
 namespace ClickMarket.Spa.Services;
@@ -9,13 +8,13 @@ public class ProdutoService(AccessTokenService accessTokenService, IHttpClientFa
     private readonly IWebHostEnvironment _env = webHostEnvironment;
     private readonly HttpClient _httpClient = httpClientFactory.CreateClient("ClickMarketAPI");
 
-    public async Task<List<ProdutoListViewModel>> ObterProdutos()
+    public async Task<List<ProdutoViewModel>> ObterProdutos()
     {
         try
         {
             var token = await accessTokenService.ObterToken();
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var produtos = await _httpClient.GetFromJsonAsync<List<ProdutoListViewModel>>("produtos");
+            var produtos = await _httpClient.GetFromJsonAsync<List<ProdutoViewModel>>("produtos");
             return produtos ?? [];
         }
         catch
@@ -23,13 +22,13 @@ public class ProdutoService(AccessTokenService accessTokenService, IHttpClientFa
             return [];
         }
     }
-    public async Task<List<ProdutoListViewModel>> ObterProdutosFavoritos()
+    public async Task<List<ProdutoViewModel>> ObterProdutosFavoritos()
     {
         try
         {
             var token = await accessTokenService.ObterToken();
             _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-            var produtos = await _httpClient.GetFromJsonAsync<List<ProdutoListViewModel>>("produtos/favoritos");
+            var produtos = await _httpClient.GetFromJsonAsync<List<ProdutoViewModel>>("produtos/favoritos");
             return produtos ?? [];
         }
         catch

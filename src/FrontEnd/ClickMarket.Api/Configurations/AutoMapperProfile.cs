@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using ClickMarket.Api.Models;
+using ClickMarket.Api.ViewModels;
 using ClickMarket.Business.Dtos;
 using ClickMarket.Business.Models;
 using ClickMarket.Business.Requests;
@@ -11,11 +11,9 @@ public class AutoMapperProfile : Profile
     public AutoMapperProfile()
     {
         CreateMap<CategoriaViewModel, Categoria>().ReverseMap();
-        CreateMap<CategoriaListViewModel, Categoria>().ReverseMap();
-        CreateMap<ProdutoViewModel, Produto>().ReverseMap();
-        CreateMap<ProdutoListViewModel, Produto>();
-        CreateMap<Produto, ProdutoListViewModel>()
-            .ForMember(dest => dest.AddListaDesejos, opt => opt.MapFrom(src => src.Favorito != null));
+        CreateMap<ProdutoViewModel, Produto>();
+        CreateMap<Produto, ProdutoViewModel>()
+            .ForMember(dest => dest.NaListaDesejos, opt => opt.MapFrom(src => src.Favorito != null));
         CreateMap<VendedorViewModel, Vendedor>().ReverseMap();
 
 
