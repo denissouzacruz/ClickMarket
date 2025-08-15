@@ -1,0 +1,66 @@
+@page "/produto/{id:guid}"
+@rendermode InteractiveServer
+@using ClickMarket.Spa.Models
+@using ClickMarket.Spa.Services
+@inject ProdutoService ProdutoService
+
+<PageTitle>Detalhes do Produto</PageTitle>
+
+<NavLink class="nav-link text-decoration-underline" href="javascript:window.history.back();">&lt; Voltar</NavLink>
+@if (produto == null)
+{
+    <p><em>Carregando...</em></p>
+}
+else
+{
+    <div class="row mb-5">
+        <div class="col-md-4">
+            <img src="@imagemUrl" class="img-fluid" alt="@produto.Nome" />
+        </div>
+        <div class="col-md-8">
+            <h2>@produto.Nome</h2>
+            <p>@produto.Descricao</p>
+            <h4 class="text-primary">R$ @produto.Valor.ToString("N2")</h4>
+        </div>
+    </div>
+
+    <h3>Outros produtos do @produto.Vendedor.Nome</h3>
+    @if (outrosProdutos == null)
+    {
+        <p><em>Carregando...</em></p>
+    }
+    else if (!outrosProdutos.Any())
+    {
+        <p>O vendedor não possui outros produtos.</p>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-md-3 g-4">
+            @foreach (var p in outrosProdutos)
+            {
+                <ProdutoComponent @key="p.Id" produto="p" produtoVitrine="false">
+                </ProdutoComponent>
+            }
+        </div>
+    }
+}
+
+@code {
+    private ProdutoViewModel produto;
+    private List<ProdutoViewModel> outrosProdutos;
+    private string imagemUrl;
+
+    [Parameter]
+    public Guid id { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        produto = await ProdutoService.ObterProduto(id);
+        if (produto != null)
+        {
+            imagemUrl = ProdutoService.ObterImagem(produto.Imagem);
+            var lista = await ProdutoService.ObterProdutosPorVendedor(produto.Vendedor.Id);
+            outrosProdutos = lista.Where(p => p.Id != produto.Id).ToList();
+        }
+    }
+}

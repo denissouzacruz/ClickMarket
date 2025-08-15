@@ -1,4 +1,4 @@
-﻿using ClickMarket.Spa.Models;
+using ClickMarket.Spa.Models;
 using System.Text.Json;
 
 namespace ClickMarket.Spa.Services;
@@ -115,6 +115,36 @@ public class ProdutoService(AccessTokenService accessTokenService, IHttpClientFa
                 Success = false,
                 Errors = ["Erro ao processar a resposta do servidor."]
             };
+        }
+    }
+
+    public async Task<ProdutoViewModel> ObterProduto(Guid id)
+    {
+        try
+        {
+            var token = await accessTokenService.ObterToken();
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var produto = await _httpClient.GetFromJsonAsync<ProdutoViewModel>($"produtos/{id}");
+            return produto;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public async Task<List<ProdutoViewModel>> ObterProdutosPorVendedor(Guid vendedorId)
+    {
+        try
+        {
+            var token = await accessTokenService.ObterToken();
+            _httpClient.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            var produtos = await _httpClient.GetFromJsonAsync<List<ProdutoViewModel>>($"produtos/vendedor/{vendedorId}");
+            return produtos ?? [];
+        }
+        catch
+        {
+            return [];
         }
     }
 

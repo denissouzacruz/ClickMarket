@@ -21,7 +21,7 @@ else
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var p in produtos)
         {
-            <ProdutoComponent produto="p" 
+            <ProdutoComponent produto="p" produtoVitrine="true"
                 RemoverDaListaCallBack="async (value) => { await RemoverDaLista(value); }">
             </ProdutoComponent>
         }

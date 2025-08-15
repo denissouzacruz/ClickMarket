@@ -39,7 +39,7 @@ else
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var p in produtos)
         {
-            <ProdutoComponent @key="p.Id" produto="p"
+            <ProdutoComponent @key="p.Id" produto="p" produtoVitrine="true"
                               SalvarNaListaCallBack="async (value) => { await SalvarNaLista(value); }"
                               RemoverDaListaCallBack="async (value) => { await RemoverDaLista(value); }">
             </ProdutoComponent>

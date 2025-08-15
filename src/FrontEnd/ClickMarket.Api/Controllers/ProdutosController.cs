@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ClickMarket.Api.Extensions;
 using ClickMarket.Api.ViewModels;
 using ClickMarket.Business.Dtos;
@@ -64,6 +64,15 @@ namespace ClickMarket.Api.Controllers
             var produtoCategoria = await _produtoRepository.ObterProdutosPorCategoriaIncluindoFavoritos(categoriaId, clienteId);
             var produtoModel = _mapper.Map<IEnumerable<ProdutoViewModel>>(produtoCategoria);
 
+            return produtoModel.ToList();
+        }
+
+        [AllowAnonymous]
+        [HttpGet("vendedor/{vendedorId}")]
+        public async Task<ActionResult<IEnumerable<ProdutoViewModel>>> ObterProdutosPorVendedorId(Guid vendedorId)
+        {
+            var produtos = await _produtoRepository.ObterProdutoPorVendedor(vendedorId);
+            var produtoModel = _mapper.Map<IEnumerable<ProdutoViewModel>>(produtos);
             return produtoModel.ToList();
         }
 

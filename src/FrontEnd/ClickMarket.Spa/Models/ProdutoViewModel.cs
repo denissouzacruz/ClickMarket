@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace ClickMarket.Spa.Models;
@@ -13,4 +13,5 @@ public class ProdutoViewModel
     public Guid CategoriaId { get; set; }
     public bool NaListaDesejos { get; set; }
     public int? QuantidadeEstoque { get; set; }
+    public VendedorViewModel Vendedor { get; set; }
 }

@@ -7,37 +7,38 @@
 
 <div class="col">
     <div class="card h-100">
-        @* <img class="card-img-top" src="@ObterImagemUrl(produto.Imagem)" alt="@produto.Nome" style="height:200px; object-fit:contain;" /> *@
-        @{
-            var imageUrl = $"{MvcOptions.Value.BaseUrl}/images/upload/{produto.Imagem}";
-        }
-        <img class="card-img-top" src="@imageUrl" alt="@produto.Nome" style="height:200px; object-fit:contain;" />
-        <div class="card-body">
-            <h5 class="card-title">@produto.Nome</h5>
-            <p class="card-text text-truncate">@produto.Descricao</p>
-        </div>
+        <NavLink class="nav-link text-black" href="@produtoDetalhesUrl">
+            <img class="card-img-top" src="@imagemUrl" alt="@produto.Nome" style="height:200px; object-fit:contain;" />
+            <div class="card-body">
+                <h5 class="card-title">@produto.Nome</h5>
+                <p class="card-text text-truncate">@produto.Descricao</p>
+            </div>
+        </NavLink>
         <div class="card-footer">
             <div class="card-footer">
                 <div class="row">
                     <div class="col-md-4">
                         <span class="fw-bold">R$ @produto.Valor.ToString("N2")</span>
                     </div>
-                    <div class="col-md-6 offset-md-2">
-                        <AuthorizeView>
-                            <Authorized>
-                                @if (!produto.NaListaDesejos)
-                                {
-                                    <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventSalvar">
-                                    <label class="btn btn-outline-primary float-end" for="@produto.Nome">Adicionar à lista</label>
-                                }
-                                else
-                                {
-                                    <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventRemover">
-                                    <label class="btn btn-outline-secondary float-end" for="@produto.Nome">Remover da lista</label>
-                                }
-                            </Authorized>
-                        </AuthorizeView>
-                    </div>
+                    @if (produtoVitrine)
+                    {
+                        <div class="col-md-6 offset-md-2">
+                            <AuthorizeView>
+                                <Authorized>
+                                    @if (!produto.NaListaDesejos)
+                                    {
+                                        <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventSalvar">
+                                        <label class="btn btn-outline-primary float-end" for="@produto.Nome">Adicionar à lista</label>
+                                    }
+                                    else
+                                    {
+                                        <input type="checkbox" class="btn-check float-end" id="@produto.Nome" autocomplete="off" @onchange="TriggerEventRemover">
+                                        <label class="btn btn-outline-secondary float-end" for="@produto.Nome">Remover da lista</label>
+                                    }
+                                </Authorized>
+                            </AuthorizeView>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -45,9 +46,14 @@
 </div>
 
 @code {
+    public string imagemUrl => $"{MvcOptions.Value.BaseUrl}/images/upload/{produto.Imagem}";
+    public string produtoDetalhesUrl => $"produto/{produto.Id}";
 
     [Parameter]
     public ProdutoViewModel produto { get; set; }
+
+    [Parameter]
+    public bool produtoVitrine { get; set; } = false;
 
     [Parameter]
     public EventCallback<Guid> SalvarNaListaCallBack { get; set; }
